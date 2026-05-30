@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: loja_veloz
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - loja-network
+
+  api-gateway:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./api-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - pedidos-service
+    networks:
+      - loja-network
+
+  pedidos-service:
+    build: ./pedidos-service
+    environment:
+      DB_HOST: db
+      DB_USER: user
+      DB_PASSWORD: password
+    depends_on:
+      - db
+    networks:
+      - loja-network
+
+  pagamentos-service:
+    build: ./pagamentos-service
+    networks:
+      - loja-network
+
+  estoque-service:
+    build: ./estoque-service
+    networks:
+      - loja-network
+
+networks:
+  loja-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
